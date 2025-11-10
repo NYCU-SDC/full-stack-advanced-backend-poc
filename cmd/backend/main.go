@@ -2,9 +2,12 @@ package main
 
 import (
 	"advanced-backend/databaseutil"
+	"advanced-backend/internal/task"
 	"context"
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 func main() {
@@ -34,4 +37,29 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	validator := validator.New()
+
+	taskService := task.NewService(logger, dbPool)
+
+	taskHandler := task.NewHandler(logger, validator, taskService)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /api/task", taskHandler.GetAll)
+	mux.HandleFunc("GET /api/task/{id}", taskHandler.GetByID)
+	mux.HandleFunc("POST /api/task", taskHandler.Create)
+	mux.HandleFunc("PUT /api/task/{id}", taskHandler.Update)
+	mux.HandleFunc("DELETE /api/task/{id}", taskHandler.Delete)
+
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	logger.Info("Backend started on :8080")
+
+	err = server.ListenAndServe()
+	if err != nil {
+		logger.Fatal("Failed to start HTTP server", zap.Error(err))
+	}
 }
