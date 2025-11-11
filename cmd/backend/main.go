@@ -2,15 +2,30 @@ package main
 
 import (
 	"advanced-backend/databaseutil"
+	"advanced-backend/internal/config"
+	"advanced-backend/internal/cors"
 	"advanced-backend/internal/task"
 	"context"
+	"errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+	"log"
 	"net/http"
 )
 
 func main() {
+	cfg, cfgLog := config.Load()
+	err := cfg.Validate()
+	if err != nil {
+		if errors.Is(err, config.ErrDatabaseURLRequired) {
+			message := "Please set the DATABASE_URL environment variable or provide a config file with the database_url key."
+			log.Fatal(message)
+		} else {
+			log.Fatalf("Failed to validate config: %v, exiting...", err)
+		}
+	}
+
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
@@ -19,14 +34,16 @@ func main() {
 		_ = logger.Sync()
 	}(logger)
 
+	cfgLog.FlushToZap(logger)
+
 	logger.Info("Starting backend service")
 
-	err = databaseutil.MigrationUp("file://internal/database/migrations", "postgresql://postgres:password@localhost:5432/postgres?sslmode=disable", logger)
+	err = databaseutil.MigrationUp(cfg.MigrationSource, cfg.DatabaseURL, logger)
 	if err != nil {
 		logger.Fatal("Failed to run database migration", zap.Error(err))
 	}
 
-	poolConfig, err := pgxpool.ParseConfig("postgresql://postgres:password@localhost:5432/postgres?sslmode=disable")
+	poolConfig, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {
 		logger.Fatal("Failed to parse database URL", zap.Error(err))
 	}
@@ -43,6 +60,8 @@ func main() {
 
 	taskHandler := task.NewHandler(logger, validator, taskService)
 
+	corsMiddleware := cors.NewMiddleware(logger, cfg.AllowOrigins)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/task", taskHandler.GetAll)
@@ -53,7 +72,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: corsMiddleware.HandlerFunc(mux.ServeHTTP),
 	}
 
 	logger.Info("Backend started on :8080")

@@ -1,0 +1,6 @@
+debug: true
+database_url: "postgres://postgres:password@localhost:5432/clustron?sslmode=disable"
+base_url: "http://localhost:8080"
+migration_source: "file:///internal/database/migrations"
+allow_origins:
+  - "*"
