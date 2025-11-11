@@ -16,9 +16,9 @@ type Response struct {
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Status      TaskStatus `json:"status"`
-	DueDate     time.Time  `json:"due_date"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	DueDate     time.Time  `json:"dueDate"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 type CreateRequest struct {
@@ -30,7 +30,7 @@ type UpdateRequest struct {
 	Title       string     `json:"title" validate:"required"`
 	Description string     `json:"description" validate:"omitempty"`
 	Status      TaskStatus `json:"status" validate:"required,oneof=INBOX TO_DO IN_PROGRESS DONE"`
-	DueDate     time.Time  `json:"due_date" validate:"omitempty"`
+	DueDate     time.Time  `json:"dueDate" validate:"omitempty"`
 }
 
 type Store interface {
