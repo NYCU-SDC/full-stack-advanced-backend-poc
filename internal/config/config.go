@@ -23,14 +23,16 @@ type PresetUserInfo struct {
 }
 
 type Config struct {
-	Debug           bool     `yaml:"debug"              envconfig:"DEBUG"`
-	Host            string   `yaml:"host"               envconfig:"HOST"`
-	Port            string   `yaml:"port"               envconfig:"PORT"`
-	BaseURL         string   `yaml:"base_url"          envconfig:"BASE_URL"`
-	Secret          string   `yaml:"secret"             envconfig:"SECRET"`
-	DatabaseURL     string   `yaml:"database_url"       envconfig:"DATABASE_URL"`
-	MigrationSource string   `yaml:"migration_source"   envconfig:"MIGRATION_SOURCE"`
-	AllowOrigins    []string `yaml:"allow_origins"      envconfig:"ALLOW_ORIGINS"`
+	Debug              bool     `yaml:"debug"              envconfig:"DEBUG"`
+	Host               string   `yaml:"host"               envconfig:"HOST"`
+	Port               string   `yaml:"port"               envconfig:"PORT"`
+	BaseURL            string   `yaml:"base_url"          envconfig:"BASE_URL"`
+	Secret             string   `yaml:"secret"             envconfig:"SECRET"`
+	GoogleClientID     string   `yaml:"google_client_id"   envconfig:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string   `yaml:"google_client_secret"       envconfig:"GOOGLE_CLIENT_SECRET"`
+	DatabaseURL        string   `yaml:"database_url"       envconfig:"DATABASE_URL"`
+	MigrationSource    string   `yaml:"migration_source"   envconfig:"MIGRATION_SOURCE"`
+	AllowOrigins       []string `yaml:"allow_origins"      envconfig:"ALLOW_ORIGINS"`
 }
 
 type LogBuffer struct {
@@ -146,13 +148,15 @@ func FromEnv(config *Config, logger *LogBuffer) (*Config, error) {
 	}
 
 	envConfig := &Config{
-		Debug:           os.Getenv("DEBUG") == "true",
-		Host:            os.Getenv("HOST"),
-		Port:            os.Getenv("PORT"),
-		BaseURL:         os.Getenv("BASE_URL"),
-		Secret:          os.Getenv("SECRET"),
-		DatabaseURL:     os.Getenv("DATABASE_URL"),
-		MigrationSource: os.Getenv("MIGRATION_SOURCE"),
+		Debug:              os.Getenv("DEBUG") == "true",
+		Host:               os.Getenv("HOST"),
+		Port:               os.Getenv("PORT"),
+		BaseURL:            os.Getenv("BASE_URL"),
+		Secret:             os.Getenv("SECRET"),
+		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		DatabaseURL:        os.Getenv("DATABASE_URL"),
+		MigrationSource:    os.Getenv("MIGRATION_SOURCE"),
 	}
 
 	return Merge[Config](config, envConfig)
@@ -166,6 +170,8 @@ func FromFlags(config *Config) (*Config, error) {
 	flag.StringVar(&flagConfig.Port, "port", "", "port")
 	flag.StringVar(&flagConfig.BaseURL, "base_url", "", "base url")
 	flag.StringVar(&flagConfig.Secret, "secret", "", "secret")
+	flag.StringVar(&flagConfig.GoogleClientID, "google_client_id", "", "google client id")
+	flag.StringVar(&flagConfig.GoogleClientSecret, "google_client_secret", "", "google client secret")
 	flag.StringVar(&flagConfig.DatabaseURL, "database_url", "", "database url")
 	flag.StringVar(&flagConfig.MigrationSource, "migration_source", "", "migration source")
 

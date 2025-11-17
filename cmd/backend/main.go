@@ -2,9 +2,12 @@ package main
 
 import (
 	"advanced-backend/databaseutil"
+	"advanced-backend/internal/auth"
 	"advanced-backend/internal/config"
 	"advanced-backend/internal/cors"
+	"advanced-backend/internal/jwt"
 	"advanced-backend/internal/task"
+	"advanced-backend/internal/user"
 	"context"
 	"errors"
 	"github.com/go-playground/validator/v10"
@@ -12,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -57,8 +61,14 @@ func main() {
 	validator := validator.New()
 
 	taskService := task.NewService(logger, dbPool)
+	userService := user.NewService(logger, dbPool)
+	jwtService := jwt.NewService(logger, 15*time.Minute, 30*time.Minute, dbPool)
 
 	taskHandler := task.NewHandler(logger, validator, taskService)
+	jwtHandler := jwt.NewHandler(logger, jwtService)
+	authHandler := auth.NewHandler(logger, cfg.BaseURL, cfg.GoogleClientID, cfg.GoogleClientSecret, jwtService, userService)
+
+	jwtMiddleware := jwt.NewMiddleware(logger, jwtService)
 
 	corsMiddleware := cors.NewMiddleware(logger, cfg.AllowOrigins)
 
@@ -66,9 +76,14 @@ func main() {
 
 	mux.HandleFunc("GET /api/task", taskHandler.GetAll)
 	mux.HandleFunc("GET /api/task/{id}", taskHandler.GetByID)
-	mux.HandleFunc("POST /api/task", taskHandler.Create)
-	mux.HandleFunc("PUT /api/task/{id}", taskHandler.Update)
-	mux.HandleFunc("DELETE /api/task/{id}", taskHandler.Delete)
+	mux.HandleFunc("POST /api/task", jwtMiddleware.HandlerFunc(taskHandler.Create))
+	mux.HandleFunc("PUT /api/task/{id}", jwtMiddleware.HandlerFunc(taskHandler.Update))
+	mux.HandleFunc("DELETE /api/task/{id}", jwtMiddleware.HandlerFunc(taskHandler.Delete))
+
+	mux.HandleFunc("GET /api/login/google", authHandler.Login)
+	mux.HandleFunc("GET /api/oauth/google/callback", authHandler.Callback)
+	mux.HandleFunc("GET /api/logout", jwtMiddleware.HandlerFunc(authHandler.Logout))
+	mux.HandleFunc("GET /api/refreshToken/{refreshToken}", jwtHandler.RefreshToken)
 
 	server := &http.Server{
 		Addr:    ":8080",
