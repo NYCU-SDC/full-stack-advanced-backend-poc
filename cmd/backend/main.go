@@ -67,6 +67,7 @@ func main() {
 	taskHandler := task.NewHandler(logger, validator, taskService)
 	jwtHandler := jwt.NewHandler(logger, jwtService)
 	authHandler := auth.NewHandler(logger, cfg.BaseURL, cfg.GoogleClientID, cfg.GoogleClientSecret, jwtService, userService)
+	userHandler := user.NewHandler(logger, validator, userService)
 
 	jwtMiddleware := jwt.NewMiddleware(logger, jwtService)
 
@@ -84,6 +85,9 @@ func main() {
 	mux.HandleFunc("GET /api/oauth/google/callback", authHandler.Callback)
 	mux.HandleFunc("GET /api/logout", jwtMiddleware.HandlerFunc(authHandler.Logout))
 	mux.HandleFunc("GET /api/refreshToken/{refreshToken}", jwtHandler.RefreshToken)
+
+	mux.HandleFunc("GET /api/user/me", jwtMiddleware.HandlerFunc(userHandler.GetMe))
+	mux.HandleFunc("PUT /api/users", jwtMiddleware.HandlerFunc(userHandler.Update))
 
 	server := &http.Server{
 		Addr:    ":8080",

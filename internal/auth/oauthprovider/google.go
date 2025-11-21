@@ -69,8 +69,9 @@ func (g *GoogleConfig) GetUserInfo(ctx context.Context, token *oauth2.Token) (Us
 	}
 
 	return UserInfo{
-		ID:    userInfo.Sub,
-		Email: userInfo.Email,
-		Name:  userInfo.Name,
+		ID:      userInfo.Sub,
+		Email:   userInfo.Email,
+		Name:    userInfo.Name,
+		Picture: userInfo.Picture,
 	}, nil
 }

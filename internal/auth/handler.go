@@ -26,7 +26,7 @@ type jwtService interface {
 }
 
 type userStore interface {
-	FindOrCreate(ctx context.Context, email string) (user.User, error)
+	FindOrCreate(ctx context.Context, email, username, avatarURL string) (user.User, error)
 }
 
 type Handler struct {
@@ -123,7 +123,7 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userStore.FindOrCreate(r.Context(), userInfo.Email)
+	user, err := h.userStore.FindOrCreate(r.Context(), userInfo.Email, userInfo.Name, userInfo.Picture)
 	if err != nil {
 		redirectTo = fmt.Sprintf("%s?error=%s", redirectTo, err)
 		h.logger.Error("Failed to find or create user", zap.Error(err))
