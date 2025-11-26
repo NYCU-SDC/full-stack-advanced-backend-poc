@@ -16,9 +16,9 @@ type jwtService interface {
 }
 
 type Response struct {
-	AccessToken    string `json:"accessToken"`
-	ExpirationTime int64  `json:"expirationTime"`
-	RefreshToken   string `json:"refreshToken"`
+	AccessToken    string `json:"access_token"`
+	ExpirationTime int64  `json:"expiration"`
+	RefreshToken   string `json:"refresh_token"`
 }
 
 type Handler struct {
